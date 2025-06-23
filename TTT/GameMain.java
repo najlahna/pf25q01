@@ -9,10 +9,10 @@ public class GameMain {
     // Define properties
     /** The game board */
     private Board board;
-    /** The current state of the game (of enum TTT.State) */
+    /** The current state of the game (of enum TTT.TTT.State) */
     private State currentState;
-    /** The current player (of enum TTT.Seed) */
-    private Seed  currentPlayer;
+    /** The current player (of enum TTT.TTT.Seed) */
+    private Seed currentPlayer;
 
     private static Scanner in = new Scanner(System.in);
 

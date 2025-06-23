@@ -2,10 +2,12 @@ package TTTGUI;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.sql.*;
+import java.util.Scanner;
 import javax.swing.*;
 /**
  * Tic-Tac-Toe: Two-player Graphic version with better OO design.
- * The TTT.Board and TTT.Cell classes are separated in their own classes.
+ * The TTT.TTT.Board and TTT.TTT.Cell classes are separated in their own classes.
  */
 public class GameMain extends JPanel {
     private static final long serialVersionUID = 1L; // to prevent serializable warning
@@ -13,8 +15,8 @@ public class GameMain extends JPanel {
     // Define named constants for the drawing graphics
     public static final String TITLE = "Tic Tac Toe";
     public static final Color COLOR_BG = Color.WHITE;
-    public static final Color COLOR_BG_STATUS = new Color(216, 216, 216);
-    public static final Color COLOR_CROSS = new Color(239, 105, 80);  // Red #EF6950
+    public static final Color COLOR_BG_STATUS = new Color(255, 255, 255);
+    public static final Color COLOR_CROSS = new Color(216, 7, 239);  // Red #EF6950
     public static final Color COLOR_NOUGHT = new Color(64, 154, 225); // Blue #409AE1
     public static final Font FONT_STATUS = new Font("OCR A Extended", Font.PLAIN, 14);
 
@@ -114,7 +116,22 @@ public class GameMain extends JPanel {
     }
 
     /** The entry "main" method */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ClassNotFoundException {
+        boolean wrongPassword = true;
+        do {
+            Scanner sc = new Scanner(System.in);
+            System.out.print("Username: ");
+            String un = sc.next();
+            System.out.print("Password: ");
+            String pass = sc.next();
+            String rPassword = retrievePassword(un);
+            if(pass.equals(rPassword)){
+                wrongPassword = false;
+                System.out.println("Login successful, enjoy the game!");
+            } else {
+                System.out.println("Wrong password! Please try again.");
+            }
+        } while(wrongPassword);
         // Run GUI construction codes in Event-Dispatching thread for thread safety
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -127,5 +144,34 @@ public class GameMain extends JPanel {
                 frame.setVisible(true);            // show it
             }
         });
+    }
+
+    static String retrievePassword(String uName) throws ClassNotFoundException {
+        String rPassword = "";
+        String host, port, databaseName, userName, password;
+        host = "mysql-tictactoe-riozaky.c.aivencloud.com";
+        port = "16190";
+        databaseName = "tictactoe";
+        userName = "avnadmin";
+        password = "AVNS_cHS_zxocCT-p3ycxwIc";
+        // JDBC allows to have nullable username and password
+        if (host == null || port == null || databaseName == null) {
+            System.out.println("Host, port, database information is required");
+            return rPassword;
+        }
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        try (final Connection connection =
+                     DriverManager.getConnection("jdbc:mysql://" + host + ":" + port + "/" + databaseName + "?sslmode=require", userName, password);
+             final Statement statement = connection.createStatement();
+             final ResultSet resultSet = statement.executeQuery("SELECT password from users where username = '" + uName + "'")) {
+
+            while (resultSet.next()) {
+                rPassword = resultSet.getString("password");
+            }
+        } catch (SQLException e) {
+            System.out.println("Connection failure.");
+            e.printStackTrace();
+        }
+        return rPassword;
     }
 }

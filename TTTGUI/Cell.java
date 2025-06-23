@@ -2,7 +2,7 @@ package TTTGUI;
 
 import java.awt.*;
 /**
- * The TTT.Cell class models each individual cell of the game board.
+ * The TTT.TTT.Cell class models each individual cell of the game board.
  */
 public class Cell {
     // Define named constants for drawing
@@ -13,7 +13,7 @@ public class Cell {
     public static final int SEED_STROKE_WIDTH = 8; // pen's stroke width
 
     // Define properties (package-visible)
-    /** Content of this cell (TTT.Seed.EMPTY, TTT.Seed.CROSS, or TTT.Seed.NOUGHT) */
+    /** Content of this cell (TTT.TTT.Seed.EMPTY, TTT.TTT.Seed.CROSS, or TTT.TTT.Seed.NOUGHT) */
     Seed content;
     /** Row and column of this cell */
     int row, col;
@@ -36,7 +36,7 @@ public class Cell {
         Graphics2D g2d = (Graphics2D)g;
         g2d.setStroke(new BasicStroke(SEED_STROKE_WIDTH,
                 BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        // Draw the TTT.Seed if it is not empty
+        // Draw the TTT.TTT.Seed if it is not empty
         int x1 = col * SIZE + PADDING;
         int y1 = row * SIZE + PADDING;
         if (content == Seed.CROSS) {

@@ -1,7 +1,7 @@
 package TTTGUI;
 import java.awt.*;
 /**
- * The TTT.Board class models the ROWS-by-COLS game board.
+ * The TTT.TTT.Board class models the ROWS-by-COLS game board.
  */
 public class Board {
     // Define named constants
@@ -16,7 +16,7 @@ public class Board {
     public static final int Y_OFFSET = 1;  // Fine tune for better display
 
     // Define properties (package-visible)
-    /** Composes of 2D array of ROWS-by-COLS TTT.Cell instances */
+    /** Composes of 2D array of ROWS-by-COLS TTT.TTT.Cell instances */
     Cell[][] cells;
 
     /** Constructor to initialize the game board */

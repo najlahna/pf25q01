@@ -38,7 +38,7 @@ public class TTTGraphics extends JFrame {
 
     // This enum (inner class) is used for:
     // 1. Player: CROSS, NOUGHT
-    // 2. TTT.Cell's content: CROSS, NOUGHT and NO_SEED
+    // 2. TTT.TTT.Cell's content: CROSS, NOUGHT and NO_SEED
     public enum Seed {
         CROSS, NOUGHT, NO_SEED
     }
