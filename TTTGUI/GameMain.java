@@ -1,72 +1,119 @@
 package TTTGUI;
 
+import javax.imageio.ImageIO;
 import javax.sound.sampled.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
-import java.util.Scanner;
 
 public class GameMain extends JPanel {
     private static final long serialVersionUID = 1L;
 
     public static final String TITLE = "Tic Tac Toe";
     public static final Color COLOR_BG = Color.WHITE;
-    public static final Color COLOR_BG_STATUS = new Color(255, 255, 255);
-    public static final Color COLOR_CROSS = new Color(216, 7, 239);
-    public static final Color COLOR_NOUGHT = new Color(64, 154, 225);
-    public static final Font FONT_STATUS = new Font("OCR A Extended", Font.PLAIN, 14);
+    public static final Font FONT_STATUS = new Font("Comic Sans MS", Font.PLAIN, 16);
 
     private Board board;
     private State currentState;
     private Seed currentPlayer;
+
     private JLabel statusBar;
+    private JLabel playerLabel;
+    private JButton restartButton;
 
     private boolean endSoundPlayed = false;
+    private BufferedImage backgroundImage;
 
     public GameMain() {
+        loadBackgroundImage();
+
+        // Mouse listener for board clicks
         super.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                int mouseX = e.getX();
-                int mouseY = e.getY();
-                int row = mouseY / Cell.SIZE;
-                int col = mouseX / Cell.SIZE;
+                int row = e.getY() / Cell.SIZE;
+                int col = e.getX() / Cell.SIZE;
 
                 if (currentState == State.PLAYING) {
                     if (row >= 0 && row < Board.ROWS && col >= 0 && col < Board.COLS
                             && board.cells[row][col].content == Seed.NO_SEED) {
                         currentState = board.stepGame(currentPlayer, row, col);
                         playSound("sounds/move.wav");
-
                         currentPlayer = (currentPlayer == Seed.CROSS) ? Seed.NOUGHT : Seed.CROSS;
                     }
                 } else {
                     newGame();
                     endSoundPlayed = false;
                 }
-
                 repaint();
             }
         });
 
+        // Status bar
         statusBar = new JLabel();
         statusBar.setFont(FONT_STATUS);
-        statusBar.setBackground(COLOR_BG_STATUS);
+        statusBar.setBackground(Color.WHITE);
         statusBar.setOpaque(true);
-        statusBar.setPreferredSize(new Dimension(300, 30));
+        statusBar.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, 30));
         statusBar.setHorizontalAlignment(JLabel.LEFT);
         statusBar.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 12));
 
+        // Restart button
+        restartButton = new JButton("Restart Game");
+        restartButton.setFont(new Font("Comic Sans MS", Font.BOLD, 14));
+        restartButton.setFocusPainted(false);
+        restartButton.setBackground(new Color(255, 105, 180));
+        restartButton.setForeground(Color.WHITE);
+        restartButton.setPreferredSize(new Dimension(150, 30));
+        restartButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        restartButton.addActionListener(e -> {
+            newGame();
+            endSoundPlayed = false;
+            repaint();
+        });
+
+        // Bottom panel (restart + status bar)
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
+        bottomPanel.add(Box.createVerticalStrut(5));
+        bottomPanel.add(restartButton);
+        bottomPanel.add(Box.createVerticalStrut(5));
+        bottomPanel.add(statusBar);
+        bottomPanel.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, 70));
+
+        // Layout setup
         super.setLayout(new BorderLayout());
-        super.add(statusBar, BorderLayout.PAGE_END);
-        super.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, Board.CANVAS_HEIGHT + 30));
-        super.setBorder(BorderFactory.createLineBorder(COLOR_BG_STATUS, 2, false));
+        super.add(bottomPanel, BorderLayout.PAGE_END);
+        super.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, Board.CANVAS_HEIGHT + 70));
+        super.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 2, false));
 
         initGame();
         newGame();
+    }
+
+    public JLabel getPlayerLabel() {
+        if (playerLabel == null) {
+            playerLabel = new JLabel("Player X vs Player O");
+            playerLabel.setFont(new Font("Comic Sans MS", Font.BOLD, 20));
+            playerLabel.setForeground(new Color(255, 105, 180));
+            playerLabel.setHorizontalAlignment(JLabel.CENTER);
+            playerLabel.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, 40));
+            playerLabel.setOpaque(false);
+        }
+        return playerLabel;
+    }
+
+    private void loadBackgroundImage() {
+        try {
+            backgroundImage = ImageIO.read(new File("TTTGUI/images/background.png"));
+            System.out.println("Background image loaded.");
+        } catch (IOException e) {
+            System.out.println("Background image not found!");
+        }
     }
 
     public void initGame() {
@@ -74,11 +121,10 @@ public class GameMain extends JPanel {
     }
 
     public void newGame() {
-        for (int row = 0; row < Board.ROWS; ++row) {
-            for (int col = 0; col < Board.COLS; ++col) {
+        for (int row = 0; row < Board.ROWS; ++row)
+            for (int col = 0; col < Board.COLS; ++col)
                 board.cells[row][col].content = Seed.NO_SEED;
-            }
-        }
+
         currentPlayer = Seed.CROSS;
         currentState = State.PLAYING;
     }
@@ -86,57 +132,86 @@ public class GameMain extends JPanel {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        setBackground(COLOR_BG);
+        if (backgroundImage != null) {
+            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+        } else {
+            setBackground(COLOR_BG);
+        }
+
         board.paint(g);
 
+        // Status bar updates
         if (currentState == State.PLAYING) {
-            statusBar.setForeground(Color.BLACK);
-            statusBar.setText((currentPlayer == Seed.CROSS) ? "X's Turn" : "O's Turn");
+            if (currentPlayer == Seed.CROSS) {
+                statusBar.setText("X's Turn");
+                statusBar.setForeground(new Color(255, 105, 180));
+            } else {
+                statusBar.setText("O's Turn");
+                statusBar.setForeground(new Color(64, 154, 225));
+            }
         } else if (currentState == State.DRAW) {
             statusBar.setForeground(Color.RED);
             statusBar.setText("It's a Draw! Click to play again.");
-            if (!endSoundPlayed) {
-                playSound("sounds/draw.wav");
-                endSoundPlayed = true;
-            }
+            playEndSoundOnce("sounds/draw.wav");
         } else if (currentState == State.CROSS_WON) {
             statusBar.setForeground(Color.RED);
             statusBar.setText("'X' Won! Click to play again.");
-            if (!endSoundPlayed) {
-                playSound("sounds/win.wav");
-                endSoundPlayed = true;
-            }
+            playEndSoundOnce("sounds/win.wav");
         } else if (currentState == State.NOUGHT_WON) {
             statusBar.setForeground(Color.RED);
             statusBar.setText("'O' Won! Click to play again.");
-            if (!endSoundPlayed) {
-                playSound("sounds/win.wav");
-                endSoundPlayed = true;
-            }
+            playEndSoundOnce("sounds/win.wav");
+        }
+    }
+
+    private void playEndSoundOnce(String path) {
+        if (!endSoundPlayed) {
+            playSound(path);
+            endSoundPlayed = true;
         }
     }
 
     public static void main(String[] args) throws ClassNotFoundException {
-        boolean wrongPassword = true;
-        do {
-            Scanner sc = new Scanner(System.in);
-            System.out.print("Username: ");
-            String un = sc.next();
-            System.out.print("Password: ");
-            String pass = sc.next();
-            String rPassword = retrievePassword(un);
-            if (pass.equals(rPassword)) {
-                wrongPassword = false;
-                System.out.println("Login successful, enjoy the game!");
-            } else {
-                System.out.println("Wrong password! Please try again.");
-                playSound("sounds/error.wav");
-            }
-        } while (wrongPassword);
+        boolean successLogin = false;
 
-        javax.swing.SwingUtilities.invokeLater(() -> {
+        while (!successLogin) {
+            JPanel panel = new JPanel(new GridLayout(2, 2, 10, 10));
+            JTextField usernameField = new JTextField();
+            JPasswordField passwordField = new JPasswordField();
+
+            panel.add(new JLabel("Username:"));
+            panel.add(usernameField);
+            panel.add(new JLabel("Password:"));
+            panel.add(passwordField);
+
+            int result = JOptionPane.showConfirmDialog(
+                    null, panel, "Login", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+            if (result == JOptionPane.OK_OPTION) {
+                String username = usernameField.getText();
+                String password = new String(passwordField.getPassword());
+
+                String realPassword = retrievePassword(username);
+                if (password.equals(realPassword)) {
+                    successLogin = true;
+                    JOptionPane.showMessageDialog(null, "Login successful! Enjoy the game 😊");
+                } else {
+                    JOptionPane.showMessageDialog(null, "❌ Wrong username or password. Try again.");
+                    playSound("sounds/error.wav");
+                }
+            } else {
+                System.exit(0); // Cancel pressed
+            }
+        }
+
+        SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame(TITLE);
-            frame.setContentPane(new GameMain());
+            GameMain gamePanel = new GameMain();
+
+            frame.setLayout(new BorderLayout());
+            frame.add(gamePanel.getPlayerLabel(), BorderLayout.PAGE_START);
+            frame.add(gamePanel, BorderLayout.CENTER);
+
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.pack();
             frame.setLocationRelativeTo(null);
@@ -152,17 +227,13 @@ public class GameMain extends JPanel {
         String userName = "avnadmin";
         String password = "AVNS__MxxTgqLNZFvbVm6MHd";
 
-        if (host == null || port == null || databaseName == null) {
-            System.out.println("Host, port, database information is required");
-            return rPassword;
-        }
-
         Class.forName("com.mysql.cj.jdbc.Driver");
         try (Connection connection = DriverManager.getConnection(
                 "jdbc:mysql://" + host + ":" + port + "/" + databaseName + "?sslmode=require",
                 userName, password);
              Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery("SELECT password from users where username = '" + uName + "'")) {
+             ResultSet resultSet = statement.executeQuery(
+                     "SELECT password from users where username = '" + uName + "'")) {
 
             while (resultSet.next()) {
                 rPassword = resultSet.getString("password");
@@ -181,7 +252,6 @@ public class GameMain extends JPanel {
                 System.out.println("Sound file not found: " + filePath);
                 return;
             }
-
             AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);
             Clip clip = AudioSystem.getClip();
             clip.open(audioIn);
@@ -191,3 +261,8 @@ public class GameMain extends JPanel {
         }
     }
 }
+
+
+
+
+
