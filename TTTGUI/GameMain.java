@@ -14,7 +14,6 @@ public class GameMain extends JPanel {
     private static final long serialVersionUID = 1L;
 
     public static final String TITLE = "Tic Tac Toe";
-    public static final Color COLOR_BG = Color.WHITE;
     public static final Font FONT_STATUS = new Font("Comic Sans MS", Font.PLAIN, 16);
 
     private Board board;
@@ -23,7 +22,13 @@ public class GameMain extends JPanel {
 
     private JLabel statusBar;
     private JLabel playerLabel;
+    private JLabel scoreLabel;
     private JButton restartButton;
+    private JButton resetScoreButton;
+
+    private int xWins = 0;
+    private int oWins = 0;
+    private int draws = 0;
 
     private boolean endSoundPlayed = false;
     private BufferedImage backgroundImage;
@@ -31,7 +36,6 @@ public class GameMain extends JPanel {
     public GameMain() {
         loadBackgroundImage();
 
-        // Mouse listener for board clicks
         super.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -53,7 +57,6 @@ public class GameMain extends JPanel {
             }
         });
 
-        // Status bar
         statusBar = new JLabel();
         statusBar.setFont(FONT_STATUS);
         statusBar.setBackground(Color.WHITE);
@@ -62,13 +65,19 @@ public class GameMain extends JPanel {
         statusBar.setHorizontalAlignment(JLabel.LEFT);
         statusBar.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 12));
 
-        // Restart button
+        // Score label
+        scoreLabel = new JLabel(getScoreText());
+        scoreLabel.setFont(FONT_STATUS);
+        scoreLabel.setHorizontalAlignment(JLabel.CENTER);
+        scoreLabel.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, 30));
+        scoreLabel.setForeground(new Color(80, 80, 80));
+
+        // Restart Game button
         restartButton = new JButton("Restart Game");
         restartButton.setFont(new Font("Comic Sans MS", Font.BOLD, 14));
         restartButton.setFocusPainted(false);
         restartButton.setBackground(new Color(255, 105, 180));
         restartButton.setForeground(Color.WHITE);
-        restartButton.setPreferredSize(new Dimension(150, 30));
         restartButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         restartButton.addActionListener(e -> {
             newGame();
@@ -76,19 +85,32 @@ public class GameMain extends JPanel {
             repaint();
         });
 
-        // Bottom panel (restart + status bar)
+        // Reset Score button
+        resetScoreButton = new JButton("Reset Score");
+        resetScoreButton.setFont(new Font("Comic Sans MS", Font.PLAIN, 12));
+        resetScoreButton.setBackground(new Color(220, 220, 220));
+        resetScoreButton.setFocusPainted(false);
+        resetScoreButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        resetScoreButton.addActionListener(e -> {
+            xWins = 0;
+            oWins = 0;
+            draws = 0;
+            updateScoreLabel();
+        });
+
         JPanel bottomPanel = new JPanel();
         bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
         bottomPanel.add(Box.createVerticalStrut(5));
         bottomPanel.add(restartButton);
         bottomPanel.add(Box.createVerticalStrut(5));
+        bottomPanel.add(resetScoreButton);
+        bottomPanel.add(Box.createVerticalStrut(5));
         bottomPanel.add(statusBar);
-        bottomPanel.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, 70));
+        bottomPanel.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, 110));
 
-        // Layout setup
         super.setLayout(new BorderLayout());
         super.add(bottomPanel, BorderLayout.PAGE_END);
-        super.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, Board.CANVAS_HEIGHT + 70));
+        super.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, Board.CANVAS_HEIGHT + 110));
         super.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 2, false));
 
         initGame();
@@ -102,15 +124,25 @@ public class GameMain extends JPanel {
             playerLabel.setForeground(new Color(255, 105, 180));
             playerLabel.setHorizontalAlignment(JLabel.CENTER);
             playerLabel.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, 40));
-            playerLabel.setOpaque(false);
         }
         return playerLabel;
+    }
+
+    public JLabel getScoreLabel() {
+        return scoreLabel;
+    }
+
+    private String getScoreText() {
+        return "Score — X: " + xWins + " | O: " + oWins + " | Draws: " + draws;
+    }
+
+    private void updateScoreLabel() {
+        scoreLabel.setText(getScoreText());
     }
 
     private void loadBackgroundImage() {
         try {
             backgroundImage = ImageIO.read(new File("TTTGUI/images/background.png"));
-            System.out.println("Background image loaded.");
         } catch (IOException e) {
             System.out.println("Background image not found!");
         }
@@ -135,12 +167,11 @@ public class GameMain extends JPanel {
         if (backgroundImage != null) {
             g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
         } else {
-            setBackground(COLOR_BG);
+            setBackground(Color.WHITE);
         }
 
         board.paint(g);
 
-        // Status bar updates
         if (currentState == State.PLAYING) {
             if (currentPlayer == Seed.CROSS) {
                 statusBar.setText("X's Turn");
@@ -152,22 +183,30 @@ public class GameMain extends JPanel {
         } else if (currentState == State.DRAW) {
             statusBar.setForeground(Color.RED);
             statusBar.setText("It's a Draw! Click to play again.");
-            playEndSoundOnce("sounds/draw.wav");
+            if (!endSoundPlayed) {
+                draws++;
+                updateScoreLabel();
+                playSound("sounds/draw.wav");
+                endSoundPlayed = true;
+            }
         } else if (currentState == State.CROSS_WON) {
             statusBar.setForeground(Color.RED);
             statusBar.setText("'X' Won! Click to play again.");
-            playEndSoundOnce("sounds/win.wav");
+            if (!endSoundPlayed) {
+                xWins++;
+                updateScoreLabel();
+                playSound("sounds/win.wav");
+                endSoundPlayed = true;
+            }
         } else if (currentState == State.NOUGHT_WON) {
             statusBar.setForeground(Color.RED);
             statusBar.setText("'O' Won! Click to play again.");
-            playEndSoundOnce("sounds/win.wav");
-        }
-    }
-
-    private void playEndSoundOnce(String path) {
-        if (!endSoundPlayed) {
-            playSound(path);
-            endSoundPlayed = true;
+            if (!endSoundPlayed) {
+                oWins++;
+                updateScoreLabel();
+                playSound("sounds/win.wav");
+                endSoundPlayed = true;
+            }
         }
     }
 
@@ -184,8 +223,8 @@ public class GameMain extends JPanel {
             panel.add(new JLabel("Password:"));
             panel.add(passwordField);
 
-            int result = JOptionPane.showConfirmDialog(
-                    null, panel, "Login", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            int result = JOptionPane.showConfirmDialog(null, panel, "Login",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
             if (result == JOptionPane.OK_OPTION) {
                 String username = usernameField.getText();
@@ -194,13 +233,13 @@ public class GameMain extends JPanel {
                 String realPassword = retrievePassword(username);
                 if (password.equals(realPassword)) {
                     successLogin = true;
-                    JOptionPane.showMessageDialog(null, "Login successful! Enjoy the game 😊");
+                    JOptionPane.showMessageDialog(null, "Login successful! Enjoy the game");
                 } else {
-                    JOptionPane.showMessageDialog(null, "❌ Wrong username or password. Try again.");
+                    JOptionPane.showMessageDialog(null, "Wrong username or password. Try again.");
                     playSound("sounds/error.wav");
                 }
             } else {
-                System.exit(0); // Cancel pressed
+                System.exit(0);
             }
         }
 
@@ -208,8 +247,12 @@ public class GameMain extends JPanel {
             JFrame frame = new JFrame(TITLE);
             GameMain gamePanel = new GameMain();
 
+            JPanel topPanel = new JPanel(new GridLayout(2, 1));
+            topPanel.add(gamePanel.getPlayerLabel());
+            topPanel.add(gamePanel.getScoreLabel());
+
             frame.setLayout(new BorderLayout());
-            frame.add(gamePanel.getPlayerLabel(), BorderLayout.PAGE_START);
+            frame.add(topPanel, BorderLayout.PAGE_START);
             frame.add(gamePanel, BorderLayout.CENTER);
 
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -232,9 +275,7 @@ public class GameMain extends JPanel {
                 "jdbc:mysql://" + host + ":" + port + "/" + databaseName + "?sslmode=require",
                 userName, password);
              Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(
-                     "SELECT password from users where username = '" + uName + "'")) {
-
+             ResultSet resultSet = statement.executeQuery("SELECT password from users where username = '" + uName + "'")) {
             while (resultSet.next()) {
                 rPassword = resultSet.getString("password");
             }
@@ -252,6 +293,7 @@ public class GameMain extends JPanel {
                 System.out.println("Sound file not found: " + filePath);
                 return;
             }
+
             AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);
             Clip clip = AudioSystem.getClip();
             clip.open(audioIn);
@@ -261,6 +303,7 @@ public class GameMain extends JPanel {
         }
     }
 }
+
 
 
 
