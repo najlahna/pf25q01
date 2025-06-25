@@ -119,7 +119,7 @@ public class GameMain extends JPanel {
 
     public JLabel getPlayerLabel() {
         if (playerLabel == null) {
-            playerLabel = new JLabel("Player X vs Player O");
+            playerLabel = new JLabel("Player X vs Player O ");
             playerLabel.setFont(new Font("Comic Sans MS", Font.BOLD, 20));
             playerLabel.setForeground(new Color(255, 105, 180));
             playerLabel.setHorizontalAlignment(JLabel.CENTER);
